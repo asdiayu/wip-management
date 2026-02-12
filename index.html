@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Storage Management</title>
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              primary: {"50":"#eff6ff","100":"#dbeafe","200":"#bfdbfe","300":"#93c5fd","400":"#60a5fa","500":"#3b82f6","600":"#2563eb","700":"#1d4ed8","800":"#1e40af","900":"#1e3a8a","950":"#172554"}
+            }
+          }
+        }
+      }
+    </script>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@19.0.0",
+    "react/": "https://esm.sh/react@19.0.0/",
+    "react-dom": "https://esm.sh/react-dom@19.0.0",
+    "react-dom/": "https://esm.sh/react-dom@19.0.0/",
+    "react-router-dom": "https://esm.sh/react-router-dom@7.1.1?deps=react@19.0.0,react-dom@19.0.0",
+    "recharts": "https://esm.sh/recharts@3.3.0?deps=react@19.0.0,react-dom@19.0.0",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.45.1",
+    "@tanstack/react-query": "https://esm.sh/@tanstack/react-query@5.51.1?deps=react@19.0.0,react-dom@19.0.0",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/package/xlsx.mjs",
+    "html-to-image": "https://esm.sh/html-to-image@1.11.11",
+    "@capacitor/core": "https://cdn.jsdelivr.net/npm/@capacitor/core@latest/+esm",
+    "@capacitor/filesystem": "https://cdn.jsdelivr.net/npm/@capacitor/filesystem@latest/+esm",
+    "@capacitor/share": "https://cdn.jsdelivr.net/npm/@capacitor/share@latest/+esm",
+    "capacitor-native-biometric": "https://esm.sh/capacitor-native-biometric",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
+    "@capacitor/cli": "https://esm.sh/@capacitor/cli@^8.0.0",
+    "vite": "https://esm.sh/vite@^7.3.0",
+    "react-markdown": "https://esm.sh/react-markdown@^10.1.0",
+    "@google/genai": "https://esm.sh/@google/genai@^1.38.0",
+    "remark-gfm": "https://esm.sh/remark-gfm@^4.0.1"
+  }
+}
+</script>
+<style>
+  .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+    content-visibility: auto;
+    contain-intrinsic-size: 1px 500px;
+  }
+  html { scroll-behavior: smooth; }
+  button, a { touch-action: manipulation; }
+  .prose table { font-size: 0.75rem; line-height: 1rem; margin-top: 0.5rem; margin-bottom: 0.5rem; width: 100%; border-collapse: collapse; }
+  .prose th { background-color: rgba(0,0,0,0.05); padding: 4px 8px !important; }
+  .dark .prose th { background-color: rgba(255,255,255,0.05); }
+  .prose td { padding: 4px 8px !important; border: 1px solid rgba(0,0,0,0.1); }
+  .dark .prose td { border: 1px solid rgba(255,255,255,0.1); }
+  @media print { body * { visibility: hidden; } #print-area, #print-area * { visibility: visible; color: black !important; } #print-area { position: absolute; left: 0; top: 0; width: 100%; height: auto !important; max-height: none !important; overflow: visible !important; background-color: white !important; padding: 20px !important; } .no-print { display: none !important; } svg rect { fill: black !important; } }
+  body { padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
+</style>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body class="bg-slate-50 dark:bg-slate-900">
+    <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>

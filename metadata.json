@@ -1,0 +1,5 @@
+{
+  "name": "Crusher Management v1.1.7",
+  "description": "A web application for managing storage items (Barang), tracking input, output, and stock levels using a Supabase backend. Features include a dashboard, transaction forms, and reporting.",
+  "requestFramePermissions": []
+}

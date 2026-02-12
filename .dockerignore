@@ -1,0 +1,10 @@
+node_modules
+npm-debug.log
+dist
+.git
+.gitignore
+.env.local
+.env.*.local
+android
+.DS_Store
+*.log

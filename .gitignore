@@ -1,0 +1,66 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Environment variables
+.env
+.env.local
+.env.production
+.env.development
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# iOS
+ios/Pods/
+ios/App/Pods/
+ios/**/*.xcodeproj/xcuserdata/
+ios/App/App/public/
+ios/**/*.moved-aside
+ios/**/*.pbxuser
+ios/**/*.perspectivev3
+ios/**/*~.nib
+ios/**/DerivedData/
+ios/**/Icon?
+ios/**/Pods/
+ios/**/.symlinks
+ios/**/profile
+ios/**/.generated/
+ios/**/build/
+ios/**/.swiftpm/
+ios/**/Package.resolved
+
+# iOS Certificates & Provisioning (NEVER commit these!)
+*.p12
+*.mobileprovision
+*.certSigningRequest
+*.cer
+
+# Android
+android/.gradle/
+android/captures/
+android/app/release/
+android/app/debug/
+android/build/
+android/local.properties
+
+# Capacitor
+.capacitor/

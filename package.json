@@ -1,0 +1,41 @@
+{
+  "name": "storage-management-v1.1.7",
+  "private": true,
+  "version": "1.1.7",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "generate-assets": "capacitor-assets generate",
+    "build:android": "npm run build && npx cap sync android",
+    "build:apk": "npm run build:android && cd android && ./gradlew assembleDebug"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.0.1",
+    "@capacitor/cli": "^7.4.4",
+    "@capacitor/core": "latest",
+    "@capacitor/filesystem": "latest",
+    "@capacitor/share": "latest",
+    "@supabase/supabase-js": "^2.45.1",
+    "@tanstack/react-query": "^5.51.1",
+    "@vitejs/plugin-react": "^5.1.1",
+    "capacitor-native-biometric": "latest",
+    "dotenv": "^17.2.3",
+    "html-to-image": "1.11.11",
+    "html5-qrcode": "^2.3.8",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-router-dom": "^7.1.1",
+    "recharts": "^3.3.0",
+    "vite": "^7.2.4",
+    "xlsx": "latest"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@types/node": "^22.14.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0"
+  }
+}
