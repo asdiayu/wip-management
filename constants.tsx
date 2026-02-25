@@ -214,6 +214,18 @@ export const SparklesIcon: React.FC<{className?: string}> = ({className}) => (
     </svg>
 );
 
+export const ChevronLeftIcon: React.FC<{className?: string}> = ({className}) => (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+    </svg>
+);
+
+export const ChevronRightIcon: React.FC<{className?: string}> = ({className}) => (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+    </svg>
+);
+
 export const NAV_LINKS = [
   { href: '/dashboard', label: 'Dashboard', icon: DashboardIcon, roles: ['admin', 'operator', 'manager', 'viewer'] },
   { href: '/input', label: 'Barang Masuk', icon: InputIcon, roles: ['admin', 'operator'] },
