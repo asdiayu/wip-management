@@ -223,7 +223,7 @@ export const useStockOpname = () => {
         try {
             const { data: logs } = await supabase.from('audit_logs').select('details').eq('action', 'OPNAME_DRAFT').gte('timestamp', `${date}T00:00:00`).lte('timestamp', `${date}T23:59:59`).order('timestamp', { ascending: true });
             const locationDrafts = new Map<string, Map<string, DraftItem>>();
-            logs?.forEach(log => { try { const d = typeof log.details === 'string' ? JSON.parse(log.details) : log.details; if(d.location_id && d.items) { const existingMap = locationDrafts.get(d.location_id) || new Map(); d.items.forEach((i: any) => existingMap.set(i.material_id, i)); locationDrafts.set(d.location_id, existingMap); } catch (e) { console.error('Error parsing draft log:', e); } });
+            logs?.forEach(log => { try { const d = typeof log.details === 'string' ? JSON.parse(log.details) : log.details; if(d.location_id) { const existing = locationDrafts.get(d.location_id) || new Map(); d.items?.forEach((i: any) => existing.set(i.material_id, i)); locationDrafts.set(d.location_id, existing); } } catch{} });
             
             const { data: txs } = await supabase.from('transactions').select('material_id, location_id, type, quantity').in('location_id', Array.from(locationDrafts.keys()));
             const sysMap = new Map<string, number>();
@@ -240,22 +240,7 @@ export const useStockOpname = () => {
                 });
             });
 
-            if (adjs.length > 0) {
-                // Masukkan transaksi penyesuaian
-                await supabase.from('transactions').insert(adjs);
-
-                // Hapus draft logs untuk mencegah double transaksi saat konfirmasi ulang
-                const { error: deleteError } = await supabase
-                    .from('audit_logs')
-                    .delete()
-                    .eq('action', 'OPNAME_DRAFT')
-                    .gte('timestamp', `${date}T00:00:00`)
-                    .lte('timestamp', `${date}T23:59:59`);
-
-                if (deleteError) {
-                    console.error('Gagal menghapus draft logs:', deleteError);
-                }
-            }
+            if (adjs.length > 0) await supabase.from('transactions').insert(adjs);
             const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(report), "Result");
             await downloadFile(`Opname_Report_${date}.xlsx`, XLSX.write(wb, { bookType: 'xlsx', type: 'base64' }), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', true);
             await logActivity(user, 'OPNAME_FINALIZE', `Finalized ${adjs.length} adjustments.`);
