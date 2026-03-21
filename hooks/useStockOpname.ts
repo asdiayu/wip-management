@@ -223,7 +223,7 @@ export const useStockOpname = () => {
         try {
             const { data: logs } = await supabase.from('audit_logs').select('details').eq('action', 'OPNAME_DRAFT').gte('timestamp', `${date}T00:00:00`).lte('timestamp', `${date}T23:59:59`).order('timestamp', { ascending: true });
             const locationDrafts = new Map<string, Map<string, DraftItem>>();
-            logs?.forEach(log => { try { const d = typeof log.details === 'string' ? JSON.parse(log.details) : log.details; if(d.location_id) { const m = new Map(); d.items?.forEach((i: any) => m.set(i.material_id, i)); locationDrafts.set(d.location_id, m); } } catch{} });
+            logs?.forEach(log => { try { const d = typeof log.details === 'string' ? JSON.parse(log.details) : log.details; if(d.location_id && d.items) { const existingMap = locationDrafts.get(d.location_id) || new Map(); d.items.forEach((i: any) => existingMap.set(i.material_id, i)); locationDrafts.set(d.location_id, existingMap); } catch(e) { console.error('Error parsing draft log:', e); } });
             
             const { data: txs } = await supabase.from('transactions').select('material_id, location_id, type, quantity').in('location_id', Array.from(locationDrafts.keys()));
             const sysMap = new Map<string, number>();
