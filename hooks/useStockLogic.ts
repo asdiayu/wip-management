@@ -71,15 +71,14 @@ export const useStockLogic = () => {
                 rpcData.forEach((row: any) => map.set(row.material_id, Number(row.stock_qty) || 0));
             }
         } else {
-            const { data: txData, error: txError } = await supabase
-                .from('transactions')
-                .select('material_id, type, quantity');
+            const { data: snapshots, error: snapshotError } = await supabase
+                .from('stock_snapshots')
+                .select('material_id, stock_quantity');
 
-            if (!txError && txData) {
-                txData.forEach((tx: any) => {
-                    const current = map.get(tx.material_id) || 0;
-                    const delta = tx.type === 'IN' ? Number(tx.quantity) || 0 : -(Number(tx.quantity) || 0);
-                    map.set(tx.material_id, current + delta);
+            if (!snapshotError && snapshots) {
+                snapshots.forEach((row: any) => {
+                    const current = map.get(row.material_id) || 0;
+                    map.set(row.material_id, current + (Number(row.stock_quantity) || 0));
                 });
             }
         }
@@ -136,11 +135,11 @@ export const useStockLogic = () => {
     }, [stockDetails, selectedLocation]);
 
     const getDisplayedStock = useCallback((material: Material) => {
-        const transactionalStock = locationStockMap.get(material.id);
+        const snapshotStock = locationStockMap.get(material.id);
         if (selectedLocation) {
-            return transactionalStock || 0;
+            return snapshotStock || 0;
         }
-        return transactionalStock ?? (material.stock || 0);
+        return snapshotStock ?? 0;
     }, [selectedLocation, locationStockMap]);
 
     const uniqueDepartments = useMemo(() => {
