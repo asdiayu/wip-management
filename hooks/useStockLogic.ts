@@ -60,20 +60,30 @@ export const useStockLogic = () => {
     const ITEMS_PER_PAGE = 50;
 
     const fetchLocationStock = useCallback(async () => {
-        if (!selectedLocation) {
-            setLocationStockMap(new Map());
-            return;
-        }
-        
-        // SERVER-SIDE AGGREGATION RPC
-        const { data: rpcData, error: rpcError } = await supabase.rpc('get_location_stock_summary', { 
-            target_location_id: selectedLocation 
-        });
-
         const map = new Map<string, number>();
-        if (!rpcError && rpcData) {
-            rpcData.forEach((row: any) => map.set(row.material_id, row.stock_qty));
+
+        if (selectedLocation) {
+            const { data: rpcData, error: rpcError } = await supabase.rpc('get_location_stock_summary', {
+                target_location_id: selectedLocation
+            });
+
+            if (!rpcError && rpcData) {
+                rpcData.forEach((row: any) => map.set(row.material_id, Number(row.stock_qty) || 0));
+            }
+        } else {
+            const { data: txData, error: txError } = await supabase
+                .from('transactions')
+                .select('material_id, type, quantity');
+
+            if (!txError && txData) {
+                txData.forEach((tx: any) => {
+                    const current = map.get(tx.material_id) || 0;
+                    const delta = tx.type === 'IN' ? Number(tx.quantity) || 0 : -(Number(tx.quantity) || 0);
+                    map.set(tx.material_id, current + delta);
+                });
+            }
         }
+
         setLocationStockMap(map);
     }, [selectedLocation]);
 
@@ -108,13 +118,29 @@ export const useStockLogic = () => {
         if (!stockDetails[materialId]) {
             setDetailLoading(materialId);
             const { data } = await supabase.rpc('get_stock_by_location', { material_id_param: materialId });
-            if (data) setStockDetails(prev => ({ ...prev, [materialId]: data as StockDetail[] }));
+            if (data) {
+                const typedData = data as StockDetail[];
+                setStockDetails(prev => ({ ...prev, [materialId]: typedData }));
+
+                if (!selectedLocation) {
+                    const verifiedTotal = typedData.reduce((sum, row) => sum + (Number(row.stock_quantity) || 0), 0);
+                    setLocationStockMap(prev => {
+                        const next = new Map(prev);
+                        next.set(materialId, verifiedTotal);
+                        return next;
+                    });
+                }
+            }
             setDetailLoading(null);
         }
-    }, [stockDetails]);
+    }, [stockDetails, selectedLocation]);
 
     const getDisplayedStock = useCallback((material: Material) => {
-        return selectedLocation ? (locationStockMap.get(material.id) || 0) : (material.stock || 0);
+        const transactionalStock = locationStockMap.get(material.id);
+        if (selectedLocation) {
+            return transactionalStock || 0;
+        }
+        return transactionalStock ?? (material.stock || 0);
     }, [selectedLocation, locationStockMap]);
 
     const uniqueDepartments = useMemo(() => {

@@ -219,34 +219,140 @@ export const useStockOpname = () => {
     };
 
     const performFinalize = async () => {
-        setConfirmModalOpen(false); setSubmitting(true); setMessage(null);
+        setConfirmModalOpen(false);
+        setSubmitting(true);
+        setMessage(null);
+        
         try {
-            const { data: logs } = await supabase.from('audit_logs').select('details').eq('action', 'OPNAME_DRAFT').gte('timestamp', `${date}T00:00:00`).lte('timestamp', `${date}T23:59:59`).order('timestamp', { ascending: true });
-            const locationDrafts = new Map<string, Map<string, DraftItem>>();
-            logs?.forEach(log => { try { const d = typeof log.details === 'string' ? JSON.parse(log.details) : log.details; if(d.location_id) { const existing = locationDrafts.get(d.location_id) || new Map(); d.items?.forEach((i: any) => existing.set(i.material_id, i)); locationDrafts.set(d.location_id, existing); } } catch{} });
-            
-            const { data: txs } = await supabase.from('transactions').select('material_id, location_id, type, quantity').in('location_id', Array.from(locationDrafts.keys()));
-            const sysMap = new Map<string, number>();
-            txs?.forEach(t => sysMap.set(`${t.location_id}|${t.material_id}`, (sysMap.get(`${t.location_id}|${t.material_id}`) || 0) + (t.type === 'IN' ? t.quantity : -t.quantity)));
+            const { data: logs } = await supabase
+                .from('audit_logs')
+                .select('details')
+                .eq('action', 'OPNAME_DRAFT')
+                .gte('timestamp', `${date}T00:00:00`)
+                .lte('timestamp', `${date}T23:59:59`)
+                .order('timestamp', { ascending: true });
 
-            const adjs: any[] = [], report: any[] = [];
+            const locationDrafts = new Map<string, Map<string, DraftItem>>();
+            logs?.forEach(log => {
+                try {
+                    const d = typeof log.details === 'string' ? JSON.parse(log.details) : log.details;
+                    if (d.location_id) {
+                        const existing = locationDrafts.get(d.location_id) || new Map<string, DraftItem>();
+                        d.items?.forEach((i: DraftItem) => existing.set(i.material_id, i));
+                        locationDrafts.set(d.location_id, existing);
+                    }
+                } catch {}
+            });
+
+            const locationIds = Array.from(locationDrafts.keys());
+            if (locationIds.length === 0) {
+                setMessage({ type: 'error', text: 'Tidak ada draft opname untuk difinalisasi.' });
+                return;
+            }
+
+            const { data: existingAdjustments } = await supabase
+                .from('transactions')
+                .select('id, material_id, location_id')
+                .in('location_id', locationIds)
+                .eq('shift', 'Adjustment')
+                .gte('timestamp', `${date}T00:00:00`)
+                .lte('timestamp', `${date}T23:59:59`)
+                .ilike('notes', 'Opname:%');
+
+            const opnameAdjustmentMap = new Map<string, string>();
+            existingAdjustments?.forEach(tx => {
+                opnameAdjustmentMap.set(`${tx.location_id}|${tx.material_id}`, tx.id);
+            });
+
+            const adjustmentIdsToDelete = new Set<string>();
+            locationDrafts.forEach((items, locId) => {
+                items.forEach((_draft, matId) => {
+                    const existingId = opnameAdjustmentMap.get(`${locId}|${matId}`);
+                    if (existingId) adjustmentIdsToDelete.add(existingId);
+                });
+            });
+
+            if (adjustmentIdsToDelete.size > 0) {
+                const { error: deleteError } = await supabase
+                    .from('transactions')
+                    .delete()
+                    .in('id', Array.from(adjustmentIdsToDelete));
+
+                if (deleteError) throw deleteError;
+            }
+
+            const { data: txs } = await supabase
+                .from('transactions')
+                .select('material_id, location_id, type, quantity')
+                .in('location_id', locationIds);
+
+            const sysMap = new Map<string, number>();
+            txs?.forEach(t => {
+                const key = `${t.location_id}|${t.material_id}`;
+                sysMap.set(key, (sysMap.get(key) || 0) + (t.type === 'IN' ? t.quantity : -t.quantity));
+            });
+
+            const adjs: any[] = [];
+            const report: any[] = [];
             locationDrafts.forEach((items, locId) => {
                 const locName = locations.find(l => l.id === locId)?.name || locId;
                 items.forEach((draft, matId) => {
                     const sys = sysMap.get(`${locId}|${matId}`) || 0;
                     const diff = draft.qty - sys;
-                    report.push({ location: locName, material: allMaterials.find(m => m.id === matId)?.name, system: sys, physical: draft.qty, diff });
-                    if (Math.abs(diff) > 0.0001) adjs.push({ material_id: matId, location_id: locId, type: diff > 0 ? TransactionType.IN : TransactionType.OUT, quantity: Math.abs(diff), shift: 'Adjustment', notes: `Opname: Fisik ${draft.qty} vs Sistem ${sys}`, timestamp: new Date().toISOString(), pic: user?.email });
+                    report.push({
+                        location: locName,
+                        material: allMaterials.find(m => m.id === matId)?.name,
+                        system: sys,
+                        physical: draft.qty,
+                        diff,
+                    });
+
+                    if (Math.abs(diff) > 0.0001) {
+                        adjs.push({
+                            material_id: matId,
+                            location_id: locId,
+                            type: diff > 0 ? TransactionType.IN : TransactionType.OUT,
+                            quantity: Math.abs(diff),
+                            shift: 'Adjustment',
+                            notes: `Opname: Fisik ${draft.qty} vs Sistem ${sys}`,
+                            timestamp: new Date().toISOString(),
+                            pic: user?.email,
+                        });
+                    }
                 });
             });
 
-            if (adjs.length > 0) await supabase.from('transactions').insert(adjs);
-            const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(report), "Result");
-            await downloadFile(`Opname_Report_${date}.xlsx`, XLSX.write(wb, { bookType: 'xlsx', type: 'base64' }), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', true);
-            await logActivity(user, 'OPNAME_FINALIZE', `Finalized ${adjs.length} adjustments.`);
-            setMessage({ type: 'success', text: `Selesai! ${adjs.length} penyesuaian dibuat.` });
-            setDraftedLocations([]); loadLocationStock();
-        } catch (e: any) { setMessage({ type: 'error', text: e.message }); } finally { setSubmitting(false); }
+            if (adjs.length > 0) {
+                const { error: insertError } = await supabase.from('transactions').insert(adjs);
+                if (insertError) throw insertError;
+            }
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(report), 'Result');
+            await downloadFile(
+                `Opname_Report_${date}.xlsx`,
+                XLSX.write(wb, { bookType: 'xlsx', type: 'base64' }),
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                true
+            );
+
+            await logActivity(
+                user,
+                'OPNAME_FINALIZE',
+                `Finalized ${adjs.length} adjustments. Replaced ${adjustmentIdsToDelete.size} previous opname adjustments.`
+            );
+
+            setMessage({
+                type: 'success',
+                text: `Selesai! ${adjs.length} penyesuaian dibuat.${adjustmentIdsToDelete.size > 0 ? ` ${adjustmentIdsToDelete.size} adjustment opname lama diganti.` : ''}`,
+            });
+            setDraftedLocations([]);
+            loadLocationStock();
+        } catch (e: any) {
+            setMessage({ type: 'error', text: e.message });
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     const handleAddManual = () => {
